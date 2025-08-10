@@ -1,8 +1,7 @@
-import 'package:bike_service_app/screens/homepage.dart'; // Add your login page import
-import 'package:bike_service_app/screens/user_login.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:bike_service_app/screens/user_login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserRegistration extends StatefulWidget {
   const UserRegistration({super.key});
@@ -17,8 +16,7 @@ class _UserRegistrationState extends State<UserRegistration> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  bool isLoading = false;
-  bool _obscurePassword = true; // for password toggle
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -29,88 +27,64 @@ class _UserRegistrationState extends State<UserRegistration> {
     super.dispose();
   }
 
-  Future<void> registerUser() async {
-    setState(() => isLoading = true);
+  //seperate storage mde save kelela data
+  Future<void> storeUserData(String uid, String name, String number) async {
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'email': emailController.text,
+      'name': fullNameController.text,
+      'number': phoneController.text,
+    });
+  }
 
-    // --- Basic Validation ---
-    if (fullNameController.text.trim().isEmpty ||
-        emailController.text.trim().isEmpty ||
-        phoneController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("All fields are required")),
-      );
-      setState(() => isLoading = false);
-      return;
-    }
-
-    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(emailController.text.trim())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter a valid email address")),
-      );
-      setState(() => isLoading = false);
-      return;
-    }
-
-    if (!RegExp(r'^\d{10}$').hasMatch(phoneController.text.trim())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter a valid 10-digit phone number")),
-      );
-      setState(() => isLoading = false);
-      return;
-    }
-
-    if (passwordController.text.trim().length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password must be at least 6 characters")),
-      );
-      setState(() => isLoading = false);
-      return;
-    }
-
+  Future<void> signUp(BuildContext context, String name, String email,
+      int number, String password) async {
     try {
-      // 1. Create Firebase Auth User
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
       );
 
-      // 2. Save additional user details in Firestore
-      await FirebaseFirestore.instance
-          .collection("users")
-          .doc(userCredential.user!.uid)
-          .set({
-        "uid": userCredential.user!.uid,
-        "fullName": fullNameController.text.trim(),
-        "email": emailController.text.trim(),
-        "phone": phoneController.text.trim(),
-        "createdAt": FieldValue.serverTimestamp(),
-      });
+     await storeUserData(userCredential.user!.uid, fullNameController.text, phoneController.text);
 
-      // 3. Navigate to Home Page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+      // If successful
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registration successful!")),
       );
     } on FirebaseAuthException catch (e) {
-      String message = "Registration failed";
       if (e.code == 'email-already-in-use') {
-        message = "This email is already registered.";
-      } else if (e.code == 'weak-password') {
-        message = "Password is too weak.";
+        // Email already registered
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Already registered! Please go to login.")),
+        );
+
+        // Optionally navigate to Login page automatically
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserLogin()),
+        );
+      } else {
+        // Other Firebase-specific errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Registration failed")),
+        );
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
     } catch (e) {
-      print("Error: $e");
+      // Non-Firebase errors
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Something went wrong!")),
+        const SnackBar(content: Text("Something went wrong.")),
       );
     }
+  }
 
-    setState(() => isLoading = false);
+  void registerUserUI() {
+    // Here you can handle the UI click event (e.g., print controllers)
+    print("Full Name: ${fullNameController.text}");
+    print("Email: ${emailController.text}");
+    print("Phone: ${phoneController.text}");
+    print("Password: ${passwordController.text}");
+    signUp(context, fullNameController.text, emailController.text,
+        phoneController.hashCode, passwordController.text);
   }
 
   @override
@@ -132,16 +106,12 @@ class _UserRegistrationState extends State<UserRegistration> {
               ),
             ),
             const SizedBox(height: 30),
-
             _buildTextField("Full Name", controller: fullNameController),
             const SizedBox(height: 16),
-
             _buildTextField("Email", controller: emailController),
             const SizedBox(height: 16),
-
             _buildTextField("Phone Number", controller: phoneController),
             const SizedBox(height: 16),
-
             _buildTextField(
               "Password",
               controller: passwordController,
@@ -159,7 +129,6 @@ class _UserRegistrationState extends State<UserRegistration> {
               ),
             ),
             const SizedBox(height: 16),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -170,24 +139,18 @@ class _UserRegistrationState extends State<UserRegistration> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: isLoading ? null : registerUser,
-                child: isLoading
-                    ? const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      )
-                    : const Text(
-                        "Register",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
+                onPressed: registerUserUI,
+                child: const Text(
+                  "Register",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),
-
             GestureDetector(
               onTap: () {
                 Navigator.push(

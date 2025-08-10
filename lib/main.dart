@@ -34,7 +34,7 @@ class BikeServiceApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: '/landing-page',
+      initialRoute: '/user-registration',
       routes: {
         '/landing-page': (context) => const LandingPage(),
         '/home-page': (context) => const HomePage(),

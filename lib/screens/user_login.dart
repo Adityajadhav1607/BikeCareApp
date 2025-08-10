@@ -1,13 +1,70 @@
 import 'package:bike_service_app/screens/homepage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class UserLogin extends StatelessWidget {
+class UserLogin extends StatefulWidget {
   const UserLogin({super.key});
+
+  @override
+  State<UserLogin> createState() => _UserLoginState();
+}
+
+class _UserLoginState extends State<UserLogin> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  Future<void> loginUser(String email, String password) async {
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+          print("User logged in: ${userCredential.user!.uid}");
+
+      // ✅ Show success popup
+      _showPopupMessage("Login Successful", "Welcome back!");
+
+      // Navigate to HomePage after short delay
+      Future.delayed(const Duration(seconds: 1), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      });
+
+    } on FirebaseAuthException catch (e) {
+      String message = "Something went wrong.";
+      if (e.code == 'user-not-found') {
+        message = "No user found for that email.";
+      } else if (e.code == 'wrong-password') {
+        message = "Wrong password provided.";
+      }
+      // ❌ Show error popup
+      _showPopupMessage("Login Failed", message);
+    }
+  }
+
+  void _showPopupMessage(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0E1A23), // Dark background
+      backgroundColor: const Color(0xFF0E1A23),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -25,6 +82,7 @@ class UserLogin extends StatelessWidget {
 
             // Username / Email Field
             TextField(
+              controller: emailController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "Username or Email",
@@ -41,6 +99,7 @@ class UserLogin extends StatelessWidget {
 
             // Password Field
             TextField(
+              controller: passwordController,
               obscureText: true,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
@@ -68,11 +127,7 @@ class UserLogin extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const HomePage()),
-                        );
+                  loginUser(emailController.text.trim(), passwordController.text.trim());
                 },
                 child: const Text(
                   "Login",
