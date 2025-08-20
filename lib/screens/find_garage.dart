@@ -1,4 +1,31 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+class Garage {
+  final String id;
+  final String image;
+  final String name;
+  final String address;
+  final String description;
+
+  Garage({
+    required this.id,
+    required this.image,
+    required this.name,
+    required this.address,
+    required this.description,
+  });
+
+  factory Garage.fromFirestore(Map<String, dynamic> data, String docId) {
+    return Garage(
+      id: docId,
+      image: data['image'] ?? '',
+      name: data['name'] ?? '',
+      address: data['address'] ?? '',
+      description: data['description'] ?? '',
+    );
+  }
+}
 
 class FindGarage extends StatelessWidget {
   const FindGarage({super.key});
@@ -11,12 +38,12 @@ class FindGarage extends StatelessWidget {
         backgroundColor: const Color(0xFF0E1A23),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text("Find a Garage"),
+        title: const Text("Find a Garage", style: TextStyle(color: Colors.white)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -50,35 +77,35 @@ class FindGarage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Garage List
+            // Garage List from Firestore
             Expanded(
-              child: ListView(
-                children: [
-                  _garageItem(
-                    image: "assets/garage1.png",
-                    name: "Velocity Cycles",
-                    address: "123 Main St, Anytown, 5 miles away",
-                    rating: 4.5,
-                    reviews: 120,
-                    description: "Quick repairs and maintenance",
-                  ),
-                  _garageItem(
-                    image: "assets/garage2.png",
-                    name: "Cycle Care",
-                    address: "456 Oak Ave, Anytown, 8 miles away",
-                    rating: 4.2,
-                    reviews: 85,
-                    description: "Specialized in electric bikes",
-                  ),
-                  _garageItem(
-                    image: "assets/garage3.png",
-                    name: "Bike Fixers",
-                    address: "789 Pine Ln, Anytown, 10 miles away",
-                    rating: 4.8,
-                    reviews: 200,
-                    description: "All types of bikes, expert mechanics",
-                  ),
-                ],
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection("garage").snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Text("No garages found", style: TextStyle(color: Colors.white)),
+                    );
+                  }
+
+                  final garages = snapshot.data!.docs;
+
+                  return ListView.builder(
+                    itemCount: garages.length,
+                    itemBuilder: (context, index) {
+                      final data = garages[index].data() as Map<String, dynamic>;
+                      return _garageItem(
+                        image: data['image'] ?? '',
+                        name: data['name'] ?? '',
+                        address: data['address'] ?? '',
+                        description: data['description'] ?? '',
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -94,8 +121,7 @@ class FindGarage extends StatelessWidget {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.build), label: "Services"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today), label: "Appointments"),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Appointments"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -123,21 +149,32 @@ class FindGarage extends StatelessWidget {
     required String image,
     required String name,
     required String address,
-    required double rating,
-    required int reviews,
     required String description,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B2B34),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Garage Image
+          // Garage Image (from URL)
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(image, width: 60, height: 60, fit: BoxFit.cover),
+            child: Image.network(
+              image,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.image, color: Colors.grey, size: 60),
+            ),
           ),
           const SizedBox(width: 12),
+
           // Garage Info
           Expanded(
             child: Column(
@@ -147,18 +184,6 @@ class FindGarage extends StatelessWidget {
                     style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),
                 Text(address, style: const TextStyle(color: Colors.grey)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.star, color: Colors.amber, size: 16),
-                    const SizedBox(width: 4),
-                    Text("$rating",
-                        style: const TextStyle(color: Colors.white)),
-                    const SizedBox(width: 4),
-                    Text("• $reviews reviews",
-                        style: const TextStyle(color: Colors.grey)),
-                  ],
-                ),
                 const SizedBox(height: 4),
                 Text(description,
                     style: const TextStyle(color: Colors.grey, fontSize: 13)),

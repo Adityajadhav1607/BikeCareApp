@@ -1,7 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'garage_dashboard.dart'; // make sure this file exists
 
-class GarageLogin extends StatelessWidget {
+class GarageLogin extends StatefulWidget {
   const GarageLogin({super.key});
+
+  @override
+  State<GarageLogin> createState() => _GarageLoginState();
+}
+
+class _GarageLoginState extends State<GarageLogin> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool isLoading = false;
+
+  Future<void> loginGarageOwner() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Navigate to Garage Dashboard after success
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const GarageDashboard()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+      if (e.code == 'user-not-found') {
+        message = 'No user found for this email.';
+      } else if (e.code == 'wrong-password') {
+        message = 'Wrong password provided.';
+      } else {
+        message = 'Login failed: ${e.message}';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Something went wrong: $e')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +67,7 @@ class GarageLogin extends StatelessWidget {
               height: 250,
               width: double.infinity,
               child: Image.asset(
-                'assets/garagetools.png', 
+                'assets/garagetools.png',
                 fit: BoxFit.cover,
               ),
             ),
@@ -40,14 +92,13 @@ class GarageLogin extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Username / Email",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  const Text("Email", style: TextStyle(color: Colors.white)),
                   const SizedBox(height: 8),
                   TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      hintText: "Enter your username/email",
+                      hintText: "Enter your email",
                       hintStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: const Color(0xFF1B2B34),
@@ -70,12 +121,10 @@ class GarageLogin extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Password",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  const Text("Password", style: TextStyle(color: Colors.white)),
                   const SizedBox(height: 8),
                   TextField(
+                    controller: passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: "Enter your password",
@@ -109,13 +158,13 @@ class GarageLogin extends StatelessWidget {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  onPressed: () {
-                    // TODO: Add login logic
-                  },
-                  child: const Text(
-                    "Login",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  onPressed: isLoading ? null : loginGarageOwner,
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Login",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ),
@@ -125,7 +174,7 @@ class GarageLogin extends StatelessWidget {
             // Forgot Password
             TextButton(
               onPressed: () {
-                // TODO: Forgot password logic
+                // TODO: Implement password reset
               },
               child: const Text(
                 "Forgot Password?",

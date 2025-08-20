@@ -13,14 +13,17 @@ class _UserLoginState extends State<UserLogin> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  bool _obscurePassword = true; // 👈 For toggling password visibility
+
   Future<void> loginUser(String email, String password) async {
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
-          print("User logged in: ${userCredential.user!.uid}");
+      print("User logged in: ${userCredential.user!.uid}");
 
       // ✅ Show success popup
-      _showPopupMessage("Login Successful", "Welcome back!");
+      _showPopupMessage(
+          "Login Successful", "Welcome ${userCredential.user!.email}");
 
       // Navigate to HomePage after short delay
       Future.delayed(const Duration(seconds: 1), () {
@@ -29,7 +32,6 @@ class _UserLoginState extends State<UserLogin> {
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
       });
-
     } on FirebaseAuthException catch (e) {
       String message = "Something went wrong.";
       if (e.code == 'user-not-found') {
@@ -37,7 +39,7 @@ class _UserLoginState extends State<UserLogin> {
       } else if (e.code == 'wrong-password') {
         message = "Wrong password provided.";
       }
-      // ❌ Show error popup
+      // Show error popup
       _showPopupMessage("Login Failed", message);
     }
   }
@@ -97,10 +99,10 @@ class _UserLoginState extends State<UserLogin> {
             ),
             const SizedBox(height: 16),
 
-            // Password Field
+            // Password Field with Eye Icon 👁
             TextField(
               controller: passwordController,
-              obscureText: true,
+              obscureText: _obscurePassword,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "Password",
@@ -110,6 +112,19 @@ class _UserLoginState extends State<UserLogin> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
                 ),
               ),
             ),
@@ -127,7 +142,8 @@ class _UserLoginState extends State<UserLogin> {
                   ),
                 ),
                 onPressed: () {
-                  loginUser(emailController.text.trim(), passwordController.text.trim());
+                  loginUser(emailController.text.trim(),
+                      passwordController.text.trim());
                 },
                 child: const Text(
                   "Login",

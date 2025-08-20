@@ -27,7 +27,7 @@ class _UserRegistrationState extends State<UserRegistration> {
     super.dispose();
   }
 
-  //seperate storage mde save kelela data
+  //seperate storage cloud storage mde save kelela data
   Future<void> storeUserData(String uid, String name, String number) async {
     await FirebaseFirestore.instance.collection('users').doc(uid).set({
       'email': emailController.text,
@@ -39,17 +39,23 @@ class _UserRegistrationState extends State<UserRegistration> {
   Future<void> signUp(BuildContext context, String name, String email,
       int number, String password) async {
     try {
-      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-     await storeUserData(userCredential.user!.uid, fullNameController.text, phoneController.text);
+      await storeUserData(userCredential.user!.uid, fullNameController.text,
+          phoneController.text);
 
       // If successful
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Registration successful!")),
       );
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserLogin()),
+        );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         // Email already registered
@@ -58,7 +64,7 @@ class _UserRegistrationState extends State<UserRegistration> {
               content: Text("Already registered! Please go to login.")),
         );
 
-        // Optionally navigate to Login page automatically
+        //navigate to Login page automatically
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const UserLogin()),
@@ -105,7 +111,7 @@ class _UserRegistrationState extends State<UserRegistration> {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 50),
             _buildTextField("Full Name", controller: fullNameController),
             const SizedBox(height: 16),
             _buildTextField("Email", controller: emailController),
