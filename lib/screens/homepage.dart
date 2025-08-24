@@ -1,5 +1,5 @@
 import 'package:bike_service_app/screens/book_appointment.dart';
-import 'package:bike_service_app/screens/find_garage.dart';
+import 'package:bike_service_app/screens/view_bookings.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -46,6 +46,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // temporary dummy garage values
+    const String garageId = "g1";
+    const String garageName = "ABC Garage";
+    const String garageAddress = "Main Street, Pune";
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 135, 195, 241),
@@ -59,7 +64,6 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             onPressed: () {
               Navigator.pushNamed(context, '/settings-page');
-
             },
             icon: const Icon(Icons.settings),
           )
@@ -70,13 +74,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Dynamic Welcome Message
-            Text("Welcome back, $name"
-              // name == null
-              //     ? "Welcome back 👋"
-              //     : "Welcome back, $name 👋",
-              // style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            Text("Welcome back, ${name ?? 'User'}"),
             const SizedBox(height: 8),
             if (email != null)
               Text(
@@ -146,7 +144,12 @@ class _HomePageState extends State<HomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const FindGarage()),
+                        builder: (context) => BookAppointment(
+                          garageId: garageId,
+                          garageName: garageName,
+                          garageAddress: garageAddress,
+                        ),
+                      ),
                     );
                   },
                   child: const Text("Book Service"),
@@ -154,7 +157,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(width: 12),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E2D3A),
+                    backgroundColor: const Color.fromARGB(255, 162, 204, 240),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -165,10 +168,11 @@ class _HomePageState extends State<HomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const FindGarage()),
+                        builder: (context) => const ViewBookings(),
+                      ),
                     );
                   },
-                  child: const Text("Find Garage"),
+                  child: const Text("View Bookings"),
                 ),
               ],
             ),
@@ -276,22 +280,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
-
-
-//signout karaycha snippet
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
-
-// Future<void> signOut(BuildContext context) async {
-//   try {
-//     await FirebaseAuth.instance.signOut();
-//     // After sign out, redirect to login screen
-//     Navigator.pushReplacementNamed(context, '/user-login');
-//   } catch (e) {
-//     print("Error signing out: $e");
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(content: Text("Failed to sign out. Try again.")),
-//     );
-//   }
-// }

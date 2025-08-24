@@ -1,5 +1,7 @@
+import 'package:bike_service_app/screens/book_appointment.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 
 class Garage {
   final String id;
@@ -97,11 +99,28 @@ class FindGarage extends StatelessWidget {
                     itemCount: garages.length,
                     itemBuilder: (context, index) {
                       final data = garages[index].data() as Map<String, dynamic>;
-                      return _garageItem(
-                        image: data['image'] ?? '',
-                        name: data['name'] ?? '',
-                        address: data['address'] ?? '',
-                        description: data['description'] ?? '',
+                      final garage = Garage.fromFirestore(data, garages[index].id);
+
+                      return GestureDetector(
+                        onTap: () {
+                          // ✅ Navigate to booking screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookAppointment(
+                                garageId: garage.id,
+                                garageName: garage.name,
+                                garageAddress: garage.address,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _garageItem(
+                          image: garage.image,
+                          name: garage.name,
+                          address: garage.address,
+                          description: garage.description,
+                        ),
                       );
                     },
                   );

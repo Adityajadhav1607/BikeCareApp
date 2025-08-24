@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class BookAppointment extends StatefulWidget {
-  const BookAppointment({super.key});
+  final String garageId;
+  final String garageName;
+  final String garageAddress;
+
+  const BookAppointment({
+    super.key,
+    required this.garageId,
+    required this.garageName,
+    required this.garageAddress,
+  });
 
   @override
   State<BookAppointment> createState() => _BookAppointmentState();
@@ -26,9 +37,10 @@ class _BookAppointmentState extends State<BookAppointment> {
             Navigator.pop(context);
           },
         ),
-        title: const Text("Book Appointment", style: TextStyle(color: Colors.white)),
+        title: const Text("Book Appointment",
+            style: TextStyle(color: Colors.white)),
       ),
-      body: SingleChildScrollView( // ✅ makes page scrollable
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +142,7 @@ class _BookAppointmentState extends State<BookAppointment> {
             ),
             const SizedBox(height: 16),
 
-            // Garage Details
+            // Garage Details (Dynamic)
             const Text("Garage Details",
                 style: TextStyle(color: Colors.white, fontSize: 16)),
             const SizedBox(height: 8),
@@ -142,26 +154,26 @@ class _BookAppointmentState extends State<BookAppointment> {
                     color: const Color(0xFF1B2B34),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.store,
-                      color: Colors.cyan, size: 24),
+                  child:
+                      const Icon(Icons.store, color: Colors.cyan, size: 24),
                 ),
                 const SizedBox(width: 12),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Bike Repair Shop",
-                        style: TextStyle(
+                    Text(widget.garageName,
+                        style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold)),
-                    Text("456 Oak St, Anytown",
-                        style: TextStyle(color: Colors.grey)),
+                    Text(widget.garageAddress,
+                        style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Total Cost
+            // Total Cost (hardcoded for now)
             const Text("Total Cost",
                 style: TextStyle(color: Colors.white, fontSize: 16)),
             const SizedBox(height: 4),
@@ -180,7 +192,7 @@ class _BookAppointmentState extends State<BookAppointment> {
                       borderRadius: BorderRadius.circular(24)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: () {},
+                onPressed: _confirmBooking,
                 child: const Text("Confirm Booking",
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),
@@ -223,5 +235,39 @@ class _BookAppointmentState extends State<BookAppointment> {
         color: isSelected ? Colors.white : Colors.white70,
       ),
     );
+  }
+
+  Future<void> _confirmBooking() async {
+    if (_selectedDay == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a date")),
+      );
+      return;
+    }
+
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      await FirebaseFirestore.instance.collection("appointments").add({
+        "userId": currentUser?.uid, // ✅ Added userId
+        "garageId": widget.garageId,
+        "garageName": widget.garageName,
+        "garageAddress": widget.garageAddress,
+        "service": "Bike Service - Full Service",
+        "date": _selectedDay!.toIso8601String(),
+        "time": _selectedTime,
+        "createdAt": DateTime.now(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Booking confirmed!")),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
   }
 }

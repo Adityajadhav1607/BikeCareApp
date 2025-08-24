@@ -227,7 +227,7 @@ class _GarageDashboardState extends State<GarageDashboard> {
   Widget _quickAction(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Container(
+      child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(

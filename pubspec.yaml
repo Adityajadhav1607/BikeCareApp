@@ -35,6 +35,7 @@ dependencies:
   firebase_auth: ^6.0.0
   cloud_firestore: ^6.0.0
   email_validator: ^3.0.0
+  table_calendar: ^3.2.0
   
 
   # The following adds the Cupertino Icons font to your application.
@@ -44,7 +45,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  table_calendar: ^3.2.0
+  
   
   
 

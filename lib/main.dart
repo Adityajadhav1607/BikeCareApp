@@ -2,7 +2,7 @@ import 'package:bike_service_app/garageScreens/booking_details.dart';
 import 'package:bike_service_app/garageScreens/garage_dashboard.dart';
 import 'package:bike_service_app/garageScreens/garage_login.dart';
 import 'package:bike_service_app/garageScreens/register_garage.dart';
-import 'package:bike_service_app/screens/book_appointment.dart';
+// import 'package:bike_service_app/screens/book_appointment.dart';
 import 'package:bike_service_app/screens/find_garage.dart';
 import 'package:bike_service_app/screens/homepage.dart';
 import 'package:bike_service_app/screens/landing_page.dart';
@@ -44,7 +44,7 @@ class BikeServiceApp extends StatelessWidget {
         '/user-registration': (context) => const UserRegistration(),
         '/user-profile': (context) => const UserProfile(),
         '/find-garage': (context) => const FindGarage(),
-        '/book-appointment': (context) => const BookAppointment(),
+        // '/book-appointment': (context) => const BookAppointment(garageId: garageId, garageName: garageName, garageAddress: garageAddress),
         '/garage-dashboard': (context) => const GarageDashboard(),
         '/garage-login': (context) => const GarageLogin(),
         '/register-garage': (context) => const RegisterGarage(),
@@ -57,6 +57,8 @@ class BikeServiceApp extends StatelessWidget {
 
 
 class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
